@@ -25,9 +25,13 @@ def allowed_file(filename: str) -> bool:
 
 
 def resize_to_256(image: Image.Image) -> Image.Image:
-    """Привести изображение к размеру 256x256, сохраняя пропорции (обрезая лишнее)."""
+    """
+    Сжать изображение до ровно 256x256 без обрезки.
+
+    Масштабирует картинку по обеим осям до 256x256, возможно с изменением пропорций.
+    """
     target_size = (256, 256)
-    return ImageOps.fit(image, target_size, Image.LANCZOS)
+    return image.resize(target_size, Image.LANCZOS)
 
 
 def dummy_process_image(image: Image.Image) -> tuple[Image.Image, str]:
