@@ -172,7 +172,7 @@
             fileInput.click();
         });
 
-        fileInput.addEventListener('change', (e) => {
+        fileInput.addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (file) {
                 if (!['image/png', 'image/jpeg', 'image/jpg', 'image/tiff'].includes(file.type)) {
@@ -186,16 +186,51 @@
                 selectedFile = file;
                 filename.textContent = `Выбран файл: ${file.name}`;
 
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    previewImage.src = event.target.result;
-                    previewImage.style.display = 'block';
-                    uploadIcon.style.display = 'none';
-                    uploadText.classList.add('has-image');
-                    uploadArea.classList.add('has-image');
-                    analyzeBtn.disabled = false;
-                };
-                reader.readAsDataURL(file);
+                if (file.type === 'image/tiff' || file.name.toLowerCase().endsWith('.tif') || file.name.toLowerCase().endsWith('.tiff')) {
+                    try {
+                        analyzeBtn.disabled = true;
+                        errorMessage.style.color = '#666';
+                        errorMessage.textContent = 'Готовим предпросмотр TIF...';
+
+                        const formData = new FormData();
+                        formData.append('file', file);
+
+                        const response = await fetch('/preview', {
+                            method: 'POST',
+                            body: formData
+                        });
+
+                        const result = await response.json();
+
+                        if (response.ok && result.preview_image) {
+                            previewImage.src = `data:image/png;base64,${result.preview_image}`;
+                            previewImage.style.display = 'block';
+                            uploadIcon.style.display = 'none';
+                            uploadText.classList.add('has-image');
+                            uploadArea.classList.add('has-image');
+                            errorMessage.textContent = '';
+                        } else {
+                            errorMessage.style.color = '#e74c3c';
+                            errorMessage.textContent = result.error || 'Не удалось получить предпросмотр TIF';
+                        }
+                    } catch (err) {
+                        errorMessage.style.color = '#e74c3c';
+                        errorMessage.textContent = 'Ошибка при получении предпросмотра TIF';
+                    } finally {
+                        analyzeBtn.disabled = false;
+                    }
+                } else {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        previewImage.src = event.target.result;
+                        previewImage.style.display = 'block';
+                        uploadIcon.style.display = 'none';
+                        uploadText.classList.add('has-image');
+                        uploadArea.classList.add('has-image');
+                        analyzeBtn.disabled = false;
+                    };
+                    reader.readAsDataURL(file);
+                }
             }
         });
 
